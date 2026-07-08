@@ -1,0 +1,9 @@
+id,name,lat,lon,status,hospital_id,contact
+A1,Ambulance-01,26.2190,78.1840,available,1,108
+A2,Ambulance-02,26.2270,78.1700,available,3,108
+A3,Ambulance-03,26.1900,78.2100,busy,4,108
+A4,Ambulance-04,26.2400,78.2180,available,6,108
+A5,Ambulance-05,26.2060,78.2010,available,4,108
+A6,Ambulance-06,26.2250,78.1850,available,1,108
+A7,Ambulance-07,26.2260,78.1780,busy,3,108
+A8,Ambulance-08,26.2140,78.1940,available,5,108

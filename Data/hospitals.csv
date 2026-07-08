@@ -1,0 +1,9 @@
+id,name,lat,lon,type,total_icu_beds,available_icu_beds,specialties,avg_wait_minutes,contact
+1,JAH Jai Arogya Hospital,26.2183,78.1828,government,50,10,"cardiology,neurology,trauma,burns,orthopedics",30,0751-2420999
+2,Kamla Raja Hospital,26.2167,78.1833,government,40,8,"cardiology,trauma,orthopedics",25,0751-2330000
+3,Birla Hospital,26.2256,78.1751,private,25,6,"cardiology,neurology,oncology",12,0751-4050000
+4,Apollo Gwalior,26.2074,78.1977,private,30,7,"cardiology,neurology,pediatrics,orthopedics",10,0751-4040000
+5,Ankur Hospital,26.2280,78.1990,private,20,5,"neurology,cardiology,pediatrics",15,0751-2341000
+6,Aditi Hospital,26.2320,78.2100,private,15,3,"trauma,burns,orthopedics",20,0751-2330500
+7,Mata Gujri Hospital,26.2445,78.2012,private,18,4,"cardiology,trauma,orthopedics",18,0751-2350000
+8,Gwalior City Hospital,26.2198,78.1764,private,12,2,"burns,pediatrics,trauma",22,0751-2320000

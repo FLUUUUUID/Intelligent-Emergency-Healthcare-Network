@@ -1,0 +1,4 @@
+id,name,lat,lon,emergency_type,severity
+P1,Test Patient 1,26.2282,78.1689,cardiology,high
+P2,Test Patient 2,26.1967,78.2143,trauma,critical
+P3,Test Patient 3,26.2124,78.1945,neurology,medium

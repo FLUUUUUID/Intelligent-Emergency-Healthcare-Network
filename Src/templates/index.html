@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IEHNI — Emergency Hospital Finder, Bhopal</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: sans-serif; display:flex; height:100vh; background:#f0f0f0; }
+    #sidebar { width:340px; background:white; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+    #map { flex:1; }
+    h1 { font-size:15px; font-weight:600; color:#c0392b; }
+    p.hint { font-size:12px; color:#888; }
+    label { font-size:12px; color:#555; display:block; margin-bottom:4px; }
+    select { width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; font-size:13px; }
+    button#find-btn { width:100%; padding:10px; background:#c0392b; color:white; border:none; border-radius:6px; font-size:14px; font-weight:500; cursor:pointer; }
+    button#find-btn:hover { background:#a93226; }
+    .card { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px; }
+    .card h3 { font-size:13px; font-weight:600; margin-bottom:6px; }
+    .card p { font-size:12px; color:#555; margin:2px 0; }
+    .rank-1 { border-left:4px solid #27ae60; }
+    .rank-2 { border-left:4px solid #f39c12; }
+    .rank-3 { border-left:4px solid #e74c3c; }
+    .badge { display:inline-block; font-size:10px; padding:2px 6px; border-radius:8px; margin-top:4px; }
+    .badge-ok { background:#e8f5e9; color:#2e7d32; }
+    .badge-warn { background:#fff3e0; color:#e65100; }
+    .badge-crit { background:#ffebee; color:#b71c1c; }
+    .amb-card { background:#e8f4fd; border-radius:8px; padding:10px; font-size:12px; }
+    .amb-card strong { font-size:13px; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>IEHNI — Emergency Finder</h1>
+  <p class="hint" id="hint">Click the map to place patient location</p>
+
+  <div>
+    <label>Emergency type</label>
+    <select id="emergency-type">
+      <option value="cardiology">Cardiology — heart attack</option>
+      <option value="trauma">Trauma — accident / injury</option>
+      <option value="neurology">Neurology — stroke</option>
+      <option value="orthopedics">Orthopedics — fracture</option>
+      <option value="pediatrics">Pediatrics — child emergency</option>
+      <option value="oncology">Oncology</option>
+      <option value="burns">Burns</option>
+    </select>
+  </div>
+
+  <button id="find-btn" onclick="findHospitals()">Find best hospitals</button>
+
+  <div id="results"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+  const map = L.map('map').setView([23.2599, 77.4126], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  let patientLat = 23.2599, patientLon = 77.4126;
+  let patientMarker = null;
+  let resultLayers = [];
+
+  const redDot = L.divIcon({
+    className: '',
+    html: '<div style="width:14px;height:14px;background:#e74c3c;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.3)"></div>',
+    iconAnchor: [7, 7]
+  });
+
+  map.on('click', e => {
+    patientLat = e.latlng.lat;
+    patientLon = e.latlng.lng;
+    if (patientMarker) map.removeLayer(patientMarker);
+    patientMarker = L.marker([patientLat, patientLon], { icon: redDot })
+      .addTo(map).bindPopup('<b>Patient location</b>').openPopup();
+    document.getElementById('hint').textContent =
+      `Patient: ${patientLat.toFixed(4)}, ${patientLon.toFixed(4)}`;
+  });
+
+  // Load and show all hospitals on startup
+  fetch('/api/hospitals').then(r => r.json()).then(data => {
+    data.hospitals.forEach(h => {
+      L.circleMarker([h.lat, h.lon], { radius: 7, color: '#2980b9', fillOpacity: 0.7, weight: 1.5 })
+        .addTo(map)
+        .bindPopup(`<b>${h.name}</b><br>ICU free: ${h.available_icu_beds}/${h.total_icu_beds}<br>Type: ${h.type}`);
+    });
+  });
+
+  // Load and show ambulances
+  fetch('/api/ambulances').then(r => r.json()).then(data => {
+    data.ambulances.forEach(a => {
+      const color = a.status === 'available' ? '#27ae60' : '#e74c3c';
+      L.circleMarker([a.lat, a.lon], { radius: 5, color, fillOpacity: 0.9, weight: 1 })
+        .addTo(map)
+        .bindPopup(`<b>${a.name}</b><br>Status: ${a.status}`);
+    });
+  });
+
+  async function findHospitals() {
+    const emergencyType = document.getElementById('emergency-type').value;
+    const btn = document.getElementById('find-btn');
+    btn.textContent = 'Searching...';
+    btn.disabled = true;
+
+    resultLayers.forEach(l => map.removeLayer(l));
+    resultLayers = [];
+
+    const res = await fetch('/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patient_lat: patientLat, patient_lon: patientLon, emergency_type: emergencyType })
+    });
+
+    const data = await res.json();
+    btn.textContent = 'Find best hospitals';
+    btn.disabled = false;
+
+    const rankColors = ['#27ae60', '#f39c12', '#e74c3c'];
+    let html = '';
+
+    data.recommendations.forEach((rec, i) => {
+      const h = rec.hospital;
+      const badgeClass = h.occupancy_status === 'low' || h.occupancy_status === 'moderate'
+        ? 'badge-ok' : h.occupancy_status === 'high' ? 'badge-warn' : 'badge-crit';
+
+      const marker = L.marker([h.lat, h.lon], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="background:${rankColors[i]};color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)">${i+1}</div>`,
+          iconAnchor: [11, 11]
+        })
+      }).addTo(map).bindPopup(`<b>#${i+1} ${h.name}</b><br>Score: ${rec.score}<br>Distance: ${rec.distance_km} km`);
+      resultLayers.push(marker);
+
+      if (patientMarker) {
+        const line = L.polyline([[patientLat, patientLon], [h.lat, h.lon]], {
+          color: rankColors[i], weight: 2, dashArray: '6 4', opacity: 0.7
+        }).addTo(map);
+        resultLayers.push(line);
+      }
+
+      html += `
+        <div class="card rank-${i+1}">
+          <h3>#${i+1} — ${h.name}</h3>
+          <p>Distance: <b>${rec.distance_km} km</b> &nbsp;|&nbsp; Score: ${rec.score}</p>
+          <p>ICU beds free: <b>${h.available_icu_beds}</b> / ${h.total_icu_beds}</p>
+          <p>Est. wait: <b>${h.adjusted_wait_minutes} min</b></p>
+          <p>Type: ${h.type}</p>
+          <span class="badge ${badgeClass}">${h.occupancy_status} occupancy</span>
+        </div>`;
+    });
+
+    if (data.nearest_ambulance) {
+      const a = data.nearest_ambulance;
+      html += `
+        <div class="amb-card">
+          <strong>Nearest ambulance</strong><br>
+          ${a.name} — ${a.distance_km} km away<br>
+          ETA: ~${a.eta_minutes} min &nbsp;|&nbsp; Call: ${a.contact}
+        </div>`;
+    }
+
+    document.getElementById('results').innerHTML = html;
+  }
+</script>
+</body>
+</html>
