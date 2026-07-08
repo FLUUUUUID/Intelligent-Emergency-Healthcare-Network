@@ -51,6 +51,12 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
+            <Link
+              to="/command"
+              className="px-3.5 py-2 text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors duration-150 rounded-lg cursor-pointer"
+            >
+              Command Center
+            </Link>
           </div>
 
           <Link
@@ -88,6 +94,13 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
+            <Link
+              to="/command"
+              onClick={() => setMobileOpen(false)}
+              className="block px-4 py-3 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+            >
+              Command Center
+            </Link>
             <div className="pt-2">
               <Link
                 to="/demo"

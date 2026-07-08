@@ -6,6 +6,7 @@ const links = [
     items: [
       { label: 'Platform', href: '#platform' },
       { label: 'Technology', href: '#technology' },
+      { label: 'Command Center', href: '/command' },
       { label: 'Roadmap', href: '#vision' },
       { label: 'How It Works', href: '#how-it-works' },
     ],

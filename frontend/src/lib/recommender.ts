@@ -196,6 +196,11 @@ function findNearestAmbulance(pLat: number, pLon: number): AmbulanceResult | nul
   return withDistance.reduce((nearest, a) => (a.distance_km < nearest.distance_km ? a : nearest))
 }
 
+/** Occupancy classification for a hospital — shared by the demo and the command center. */
+export function occupancyInfo(available: number, total: number): { status: Hospital['occupancy_status']; rate: number } {
+  return getOccupancy(available, total)
+}
+
 /** Mirror of the Flask /api/recommend endpoint, computed in-browser. */
 export function computeRecommendation(
   patientLat: number,

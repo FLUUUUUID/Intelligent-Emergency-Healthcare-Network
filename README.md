@@ -63,6 +63,14 @@ The UI is fully touch-optimized: pinch-zoom on the dispatch map, one-finger page
 **Shortcuts:** `1–5` choose emergency · `Enter` dispatch · `Esc` back/reset.
 **Deep links:** `/demo?go=cardiac` (or `trauma` / `neuro` / `burns` / `pediatric`) auto-runs a scenario — handy for sharing.
 
+---
+
+## The Command Center (`/command`)
+
+A city-wide operations view of the whole network: all 8 hospitals with live occupancy rings, the ambulance fleet (free/busy), network-level stats, and an incoming-emergency feed — **every simulated call is routed by the same AI scoring engine that powers the demo**. Click any hospital in the capacity list to fly the map to it.
+
+![IEHN Command Center](Docs/screenshots/command-center.png)
+
 ![The problem](Docs/screenshots/problem-section.png)
 
 ---
@@ -100,8 +108,8 @@ curl -X POST http://localhost:5000/api/recommend \
 ```
 ├── frontend/                 # React 18 + TypeScript + Vite + Tailwind
 │   └── src/
-│       ├── pages/            # LandingPage, DemoPage (4-step demo state machine)
-│       ├── components/       # LiveMap (Leaflet + OSRM), landing sections
+│       ├── pages/            # LandingPage, DemoPage, CommandCenter (network ops view)
+│       ├── components/       # LiveMap (Leaflet + OSRM), NetworkMap, landing sections
 │       ├── lib/recommender.ts# In-browser scoring engine (mirrors backend)
 │       └── data/gwalior.ts   # Hospital + ambulance dataset (mirrors Data/*.csv)
 ├── Src/
