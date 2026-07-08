@@ -1,10 +1,18 @@
 # IEHN — Intelligent Emergency Healthcare Network
 
+### 🔴 [**Live Demo → intelligent-emergency-healthcare-ne.vercel.app**](https://intelligent-emergency-healthcare-ne.vercel.app) &nbsp;·&nbsp; try [`/demo?go=cardiac`](https://intelligent-emergency-healthcare-ne.vercel.app/demo?go=cardiac) for an instant dispatch run
+
 An AI-powered emergency healthcare network that connects **patients, ambulances, and hospitals** in real time. When an emergency is reported, the engine scores every registered hospital on distance, live ICU capacity, specialty match, and predicted wait time — then dispatches the nearest ambulance and shows the whole journey on a live map.
 
 Built on real hospital data from **Gwalior, Madhya Pradesh** (8 hospitals · 8 ambulances).
 
-![stack](https://img.shields.io/badge/React%2018-TypeScript-blue) ![backend](https://img.shields.io/badge/Flask-Python-green) ![maps](https://img.shields.io/badge/Leaflet-OSRM%20routing-brightgreen)
+![stack](https://img.shields.io/badge/React%2018-TypeScript-blue) ![backend](https://img.shields.io/badge/Flask-Python-green) ![maps](https://img.shields.io/badge/Leaflet-OSRM%20routing-brightgreen) [![deploy](https://img.shields.io/badge/Vercel-live-black?logo=vercel)](https://intelligent-emergency-healthcare-ne.vercel.app)
+
+![IEHN landing page](Docs/screenshots/landing-hero.png)
+
+**Live AI dispatch** — road-following OSRM route, animated ambulance with countdown ETA, ranked alternatives:
+
+![Live dispatch demo](Docs/screenshots/live-dispatch.png)
 
 ---
 
@@ -54,6 +62,8 @@ The UI is fully touch-optimized: pinch-zoom on the dispatch map, one-finger page
 
 **Shortcuts:** `1–5` choose emergency · `Enter` dispatch · `Esc` back/reset.
 **Deep links:** `/demo?go=cardiac` (or `trauma` / `neuro` / `burns` / `pediatric`) auto-runs a scenario — handy for sharing.
+
+![The problem](Docs/screenshots/problem-section.png)
 
 ---
 
