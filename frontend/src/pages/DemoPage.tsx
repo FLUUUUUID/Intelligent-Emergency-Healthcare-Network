@@ -8,13 +8,21 @@ import {
 } from 'lucide-react'
 import LiveMap from '../components/LiveMap'
 import {
-  computeRecommendation, computeSeverity, DEFAULT_TRIAGE,
+  computeRecommendation, computeSeverity, haversineKm, DEFAULT_TRIAGE,
   type ApiResult, type Triage, type Severity, type AgeBand, type Consciousness, type Casualties,
 } from '../lib/recommender'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface UserLocation { lat: number; lon: number; address?: string; accuracy?: number }
+interface UserLocation {
+  lat: number
+  lon: number
+  address?: string
+  accuracy?: number
+  /** Set when the visitor is outside the Gwalior pilot area — lat/lon then
+      point at the city centre and `remote` describes their real position. */
+  remote?: { address?: string; distanceKm: number }
+}
 interface EmergencyType {
   id: string; icon: React.ElementType; title: string
   severity: Severity; type: string; color: string; description: string
@@ -138,6 +146,11 @@ function triageSummary(t: Triage): string {
 // hospital, so the recommendation spreads across candidates.
 const GW_DEFAULT: UserLocation = { lat: 26.2120, lon: 78.1850, address: 'Gwalior City Centre (default)' }
 
+// The dataset covers the Gwalior network only. Visitors further than this
+// from the city centre get the demo relocated there (with clear messaging)
+// instead of absurd 300 km ambulance dispatches.
+const PILOT_RADIUS_KM = 25
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function DemoPage() {
@@ -189,7 +202,24 @@ export default function DemoPage() {
           const parts = [d.address?.suburb, d.address?.city || d.address?.town, d.address?.state].filter(Boolean)
           address = parts.length ? parts.join(', ') : d.display_name?.split(',').slice(0, 2).join(', ')
         } catch { /* ignore */ }
-        if (live()) applyLocation({ lat, lon, accuracy, address }, false, null, 600)
+        if (!live()) return
+        const distToPilot = haversineKm(lat, lon, GW_DEFAULT.lat, GW_DEFAULT.lon)
+        if (distToPilot > PILOT_RADIUS_KM) {
+          // Outside the Gwalior pilot network — relocate the demo to the city
+          // centre and tell the visitor why, instead of dispatching an
+          // ambulance across half of India.
+          applyLocation(
+            {
+              lat: GW_DEFAULT.lat,
+              lon: GW_DEFAULT.lon,
+              address: 'Gwalior City Centre (pilot demo)',
+              remote: { address, distanceKm: Math.round(distToPilot) },
+            },
+            false, null, 2200,
+          )
+        } else {
+          applyLocation({ lat, lon, accuracy, address }, false, null, 600)
+        }
       },
       (err) => { clearTimeout(hardTimer); if (live()) applyLocation(GW_DEFAULT, true, err.message, 1200) },
       { timeout: 7000 }
@@ -352,7 +382,16 @@ export default function DemoPage() {
                   <MapPin className="w-8 h-8 text-[#60A5FA]" />
                 </div>
               </div>
-              {locationError ? (
+              {userLocation?.remote ? (
+                <>
+                  <div className="flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-amber-400" /><span className="text-[17px] font-semibold text-amber-300">You’re outside the pilot area</span></div>
+                  <p className="text-[14px] text-white/55 text-center max-w-sm leading-relaxed">
+                    IEHN is a research prototype currently serving the <span className="text-white/80 font-medium">Gwalior network only</span>
+                    {userLocation.remote.address ? <> — you’re in {userLocation.remote.address}, ≈{userLocation.remote.distanceKm} km away</> : <> — you’re ≈{userLocation.remote.distanceKm} km away</>}.
+                    Running the demo from Gwalior city centre…
+                  </p>
+                </>
+              ) : locationError ? (
                 <>
                   <div className="flex items-center gap-2 mb-3"><AlertCircle className="w-4 h-4 text-yellow-400" /><span className="text-[17px] font-semibold text-yellow-300">Couldn’t access your location</span></div>
                   <p className="text-[14px] text-white/55 text-center max-w-sm leading-relaxed">No problem — we’ll use Gwalior city centre as your default. Taking you to the demo…</p>
@@ -374,18 +413,38 @@ export default function DemoPage() {
           {state === 'selecting' && userLocation && (
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
-              {/* Location banner */}
+              {/* Location banner — green: real GPS in pilot area · amber: outside
+                  pilot area (demo relocated) · blue: GPS denied/skipped default */}
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                className={`flex items-center gap-3 p-4 rounded-xl border mb-8 sm:mb-10 ${usingDefault ? 'border-[#2563EB]/20 bg-[#2563EB]/5' : 'border-[#10B981]/20 bg-[#10B981]/5'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${usingDefault ? 'bg-[#2563EB]/12 border border-[#2563EB]/25' : 'bg-[#10B981]/15 border border-[#10B981]/20'}`}>
-                  {usingDefault ? <MapPin className="w-4 h-4 text-[#60A5FA]" /> : <CheckCircle className="w-4 h-4 text-[#34D399]" />}
+                className={`flex items-center gap-3 p-4 rounded-xl border mb-8 sm:mb-10 ${
+                  userLocation.remote ? 'border-amber-400/25 bg-amber-400/[0.06]'
+                  : usingDefault ? 'border-[#2563EB]/20 bg-[#2563EB]/5'
+                  : 'border-[#10B981]/20 bg-[#10B981]/5'
+                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  userLocation.remote ? 'bg-amber-400/10 border border-amber-400/25'
+                  : usingDefault ? 'bg-[#2563EB]/12 border border-[#2563EB]/25'
+                  : 'bg-[#10B981]/15 border border-[#10B981]/20'
+                }`}>
+                  {userLocation.remote ? <MapPin className="w-4 h-4 text-amber-400" />
+                    : usingDefault ? <MapPin className="w-4 h-4 text-[#60A5FA]" />
+                    : <CheckCircle className="w-4 h-4 text-[#34D399]" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-[11px] font-bold uppercase tracking-widest mb-0.5 ${usingDefault ? 'text-[#60A5FA]' : 'text-[#34D399]'}`}>
-                    {usingDefault ? 'Default Location' : 'Location Detected'}
+                  <div className={`text-[11px] font-bold uppercase tracking-widest mb-0.5 ${
+                    userLocation.remote ? 'text-amber-400' : usingDefault ? 'text-[#60A5FA]' : 'text-[#34D399]'
+                  }`}>
+                    {userLocation.remote ? 'Gwalior pilot area only' : usingDefault ? 'Default Location' : 'Location Detected'}
                   </div>
-                  <div className="text-[13px] text-white/75 truncate">{locLabel}</div>
-                  {userLocation.accuracy && !usingDefault && (
+                  {userLocation.remote ? (
+                    <div className="text-[13px] text-white/75 leading-snug">
+                      Demo running from <span className="font-semibold text-white/90">Gwalior City Centre</span> — your location
+                      {userLocation.remote.address ? ` (${userLocation.remote.address}, ≈${userLocation.remote.distanceKm} km away)` : ` (≈${userLocation.remote.distanceKm} km away)`} is outside this research prototype's pilot network.
+                    </div>
+                  ) : (
+                    <div className="text-[13px] text-white/75 truncate">{locLabel}</div>
+                  )}
+                  {userLocation.accuracy && !usingDefault && !userLocation.remote && (
                     <div className="text-[11px] text-white/45 mt-0.5">Accurate to ±{Math.round(userLocation.accuracy)} m</div>
                   )}
                 </div>
@@ -439,8 +498,8 @@ export default function DemoPage() {
               <p className="hidden sm:block text-center text-[12px] text-white/45 mt-8">
                 Press <kbd className="px-1.5 py-0.5 rounded border border-white/15 bg-white/5 font-mono text-white/60">1</kbd>–<kbd className="px-1.5 py-0.5 rounded border border-white/15 bg-white/5 font-mono text-white/60">5</kbd> to choose quickly
               </p>
-              <p className="text-center text-[12px] text-white/50 mt-3">
-                Powered by real hospital data from Gwalior, India · 8 hospitals · 8 ambulances
+              <p className="text-center text-[12px] text-white/60 mt-3">
+                Research prototype · real hospital data from Gwalior, India · 8 hospitals · 8 ambulances
               </p>
             </div>
           )}
