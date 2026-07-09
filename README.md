@@ -83,10 +83,16 @@ score = distance_score·0.40 + icu_ratio·0.30 + specialty·0.20 + wait_score·0
 distance_score = 1 / (km + 0.1)              # haversine
 icu_ratio      = available_beds / total_beds
 specialty      = 1.5 if match else 0.5       # +0.3 paediatrics nudge for infants/children
-wait_score     = 1 / (adjusted_wait + 1)     # wait scaled by occupancy (1.0×–2.5×)
+wait_score     = 1 / (predicted_wait + 1)    # ML-predicted wait (see below)
 ```
 
 Identical implementations in Python ([Src/hospital_recommender.py](Src/hospital_recommender.py)) and TypeScript ([frontend/src/lib/recommender.ts](frontend/src/lib/recommender.ts)) — the browser fallback gives the same answer as the API.
+
+### ML wait-time model
+
+Wait times are predicted by a **trained ridge-regression model** (R² ≈ 0.85 on held-out data, within a few percent of a 200-tree random-forest reference) using queueing-informed features: polynomial ICU-occupancy congestion, sine/cosine diurnal demand encoding, and facility type. The full methodology — synthetic data generation from documented assumptions, model comparison, selection under the dual-runtime portability constraint — lives in [Notebooks/wait_time_model.ipynb](Notebooks/wait_time_model.ipynb).
+
+The trained artifact exports to a ~1 KB JSON ([Data/wait_model.json](Data/wait_model.json)) evaluated **identically in both runtimes** (verified to 6 decimal places), with the Phase-1 heuristic retained as a fallback. Phase 2 retrains the same pipeline on live HMIS feeds.
 
 ## API
 
@@ -115,10 +121,12 @@ curl -X POST http://localhost:5000/api/recommend \
 ├── Src/
 │   ├── app.py                # Flask JSON API
 │   ├── hospital_recommender.py  # Scoring engine
-│   ├── occupancy_predictor.py   # Occupancy → adjusted wait model
+│   ├── occupancy_predictor.py   # Occupancy status + ML wait-time inference
 │   ├── route_optimizer.py       # Haversine, ETA, nearest ambulance
 │   └── main.py               # Streamlit prototype UI (alternate)
-├── Data/                     # hospitals.csv · ambulances.csv · patients.csv
+├── Notebooks/
+│   └── wait_time_model.ipynb # ML wait-time model: data, training, export
+├── Data/                     # hospitals.csv · ambulances.csv · wait_model.json
 └── requirements.txt
 ```
 
@@ -126,7 +134,7 @@ curl -X POST http://localhost:5000/api/recommend \
 
 **Frontend** React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Leaflet + react-leaflet, Lucide icons
 **Maps & geo** OpenStreetMap/CARTO dark tiles, OSRM public routing, Nominatim reverse geocoding, browser Geolocation API
-**Backend** Flask (JSON API), CSV datasets — Phase 2 swaps in live hospital feeds + a trained wait-time model
+**Backend** Flask (JSON API), CSV datasets, trained wait-time model (scikit-learn → portable JSON) — Phase 2 swaps in live hospital feeds
 
 ## Roadmap
 

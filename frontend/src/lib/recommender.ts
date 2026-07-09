@@ -7,6 +7,7 @@
 // hardcoded numbers that ignore where the user actually is.
 
 import { HOSPITALS, AMBULANCES, RawHospital } from '../data/gwalior'
+import waitModel from '../data/wait-model.json'
 
 // ─── Shared result types (match the Flask /api/recommend JSON) ────────────────
 
@@ -92,11 +93,40 @@ function getOccupancy(available: number, total: number): { status: Hospital['occ
   return { status: 'low', rate }
 }
 
-function predictWaitTime(baseWait: number, rate: number): number {
-  let multiplier = 1.0
-  if (rate >= 0.9) multiplier = 2.5
-  else if (rate >= 0.7) multiplier = 1.7
-  else if (rate >= 0.4) multiplier = 1.2
+// ─── ML wait-time model ───────────────────────────────────────────────────────
+// Trained in Notebooks/wait_time_model.ipynb and exported as a 9-coefficient
+// ridge artifact. The Python backend evaluates the exact same JSON
+// (Data/wait_model.json), keeping both runtimes numerically identical.
+
+function modelMultiplier(occ: number, isGov: boolean, hour: number): number | null {
+  const m = waitModel as { intercept: number; coefficients: number[]; clip?: number[] }
+  if (!m || !Array.isArray(m.coefficients) || m.coefficients.length !== 9) return null
+  const g = isGov ? 1 : 0
+  const h = (2 * Math.PI * hour) / 24
+  const feats = [
+    occ, occ ** 2, occ ** 3, g, occ * g,
+    Math.sin(h), Math.cos(h), Math.sin(2 * h), Math.cos(2 * h),
+  ]
+  const z = m.intercept + feats.reduce((s, x, i) => s + m.coefficients[i] * x, 0)
+  const [lo, hi] = m.clip ?? [1.0, 3.5]
+  return Math.min(hi, Math.max(lo, z))
+}
+
+/** Phase-1 step heuristic — retained as the fallback. */
+function heuristicMultiplier(rate: number): number {
+  if (rate >= 0.9) return 2.5
+  if (rate >= 0.7) return 1.7
+  if (rate >= 0.4) return 1.2
+  return 1.0
+}
+
+function predictWaitTime(
+  baseWait: number,
+  rate: number,
+  type: RawHospital['type'] = 'private',
+  hour: number = new Date().getHours(),
+): number {
+  const multiplier = modelMultiplier(rate, type === 'government', hour) ?? heuristicMultiplier(rate)
   return round(baseWait * multiplier, 0)
 }
 
@@ -106,7 +136,7 @@ function enrich(h: RawHospital): Hospital {
     ...h,
     occupancy_status: status,
     occupancy_rate: round(rate, 2),
-    adjusted_wait_minutes: predictWaitTime(h.avg_wait_minutes, rate),
+    adjusted_wait_minutes: predictWaitTime(h.avg_wait_minutes, rate, h.type),
   }
 }
 

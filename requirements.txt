@@ -1,6 +1,13 @@
 # IEHN backend dependencies
 flask>=3.0
 
+# Research / model training (Notebooks/wait_time_model.ipynb)
+scikit-learn>=1.5
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+nbconvert>=7.0
+ipykernel>=6.0
+
 # Optional — only needed for the Streamlit prototype UI (Src/main.py)
 streamlit>=1.40
-pandas>=2.0

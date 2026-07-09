@@ -594,7 +594,7 @@ export default function DemoPage() {
                         { icon: Bed, label: 'ICU Available', value: `${top.hospital.available_icu_beds}/${top.hospital.total_icu_beds}`, color: top.hospital.available_icu_beds < 5 ? '#EF4444' : top.hospital.available_icu_beds < 10 ? '#F59E0B' : '#10B981' },
                         { icon: Navigation, label: 'Distance', value: `${top.distance_km} km`, color: '#60A5FA' },
                         { icon: Clock, label: 'ETA', value: `${top.route.estimated_minutes} min`, color: '#34D399' },
-                        { icon: Clock, label: 'Adj. Wait', value: `${top.hospital.adjusted_wait_minutes} min`, color: '#A78BFA' },
+                        { icon: Clock, label: 'Predicted wait', value: `${top.hospital.adjusted_wait_minutes} min`, color: '#A78BFA' },
                       ].map(m => { const MIcon = m.icon; return (
                         <div key={m.label} className="bg-white/4 rounded-xl p-3 border border-white/5">
                           <MIcon className="w-3.5 h-3.5 mb-2" style={{ color: m.color }} />

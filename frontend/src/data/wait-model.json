@@ -1,0 +1,40 @@
+{
+  "name": "iehn-wait-time-v1",
+  "target": "wait_multiplier",
+  "features": [
+    "occ",
+    "occ2",
+    "occ3",
+    "is_gov",
+    "occ_x_gov",
+    "sin_h",
+    "cos_h",
+    "sin_2h",
+    "cos_2h"
+  ],
+  "intercept": 1.3802659098266836,
+  "coefficients": [
+    -0.32134275037343374,
+    -3.0532455219975416,
+    6.5676071779752325,
+    0.10276583129338497,
+    0.31288591500831636,
+    -0.15340507975177012,
+    -0.09820918065030684,
+    -0.13401761160914427,
+    -0.043015656894509036
+  ],
+  "clip": [
+    1.0,
+    3.5
+  ],
+  "metrics": {
+    "r2": 0.8505,
+    "mae_multiplier": 0.2633,
+    "mae_minutes": 5.5384,
+    "randomforest_r2_reference": 0.9139
+  },
+  "training_samples": 6000,
+  "generator": "synthetic-v1 (queueing-calibrated, see notebook \u00a71)",
+  "trained_at": "2026-07-08T13:43:30+00:00"
+}
