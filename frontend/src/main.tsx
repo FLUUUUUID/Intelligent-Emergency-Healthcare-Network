@@ -3,12 +3,14 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import DemoPage from './pages/DemoPage'
 import CommandCenter from './pages/CommandCenter'
+import ErrorPage from './pages/ErrorPage'
 import './index.css'
 
 const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
-  { path: '/demo', element: <DemoPage /> },
-  { path: '/command', element: <CommandCenter /> },
+  { path: '/', element: <LandingPage />, errorElement: <ErrorPage /> },
+  { path: '/demo', element: <DemoPage />, errorElement: <ErrorPage /> },
+  { path: '/command', element: <CommandCenter />, errorElement: <ErrorPage /> },
+  { path: '*', element: <ErrorPage notFound /> },
 ])
 
 // Note: React.StrictMode is intentionally omitted. Its dev-only double-mount

@@ -12,7 +12,9 @@ Built on real hospital data from **Gwalior, Madhya Pradesh** (8 hospitals · 8 a
 
 **Live AI dispatch** — road-following OSRM route, animated ambulance with countdown ETA, ranked alternatives:
 
-![Live dispatch demo](Docs/screenshots/live-dispatch.png)
+![Live dispatch animation](Docs/screenshots/live-dispatch.gif)
+
+![Live dispatch results](Docs/screenshots/live-dispatch.png)
 
 ---
 
@@ -119,6 +121,41 @@ curl -X POST http://localhost:5000/api/recommend \
   -H "Content-Type: application/json" \
   -d '{"patient_lat":26.212,"patient_lon":78.185,"emergency_type":"cardiology","triage":{"age":"adult","consciousness":"alert","casualties":"single"}}'
 ```
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser["Browser — React 18 + TypeScript"]
+        UI["Landing · /demo · /command"]
+        TS["In-browser scoring engine<br/>recommender.ts + wait-model.json"]
+    end
+
+    subgraph Backend["Backend (optional) — Flask"]
+        API["/api/recommend · /api/health"]
+        ENG["Python scoring engine<br/>hospital_recommender.py"]
+        ML["ML wait-time model<br/>Data/wait_model.json"]
+        DATA[("Gwalior dataset<br/>8 hospitals · 8 ambulances")]
+    end
+
+    subgraph External["External services"]
+        OSRM["OSRM road routing"]
+        NOM["Nominatim reverse geocoding"]
+        CARTO["CARTO dark map tiles"]
+    end
+
+    UI -->|"POST /api/recommend"| API
+    UI -->|"API unreachable → same math, zero deps"| TS
+    API --> ENG
+    ENG --> ML
+    ENG --> DATA
+    UI --> OSRM
+    UI --> NOM
+    UI --> CARTO
+    TS -. "identical outputs — enforced by golden-fixture tests (pytest + vitest)" .- ENG
+```
+
+Both scoring engines evaluate the same exported ML artifact and are pinned to each other by the [parity test suite](#testing--enforced-cross-runtime-parity) — the browser fallback is not an approximation, it *is* the engine.
 
 ## Project structure
 
