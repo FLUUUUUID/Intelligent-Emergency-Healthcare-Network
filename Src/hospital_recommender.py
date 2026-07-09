@@ -76,12 +76,13 @@ def score_hospital(hospital, patient_lat, patient_lon, emergency_type, triage=No
     }
 
 
-def recommend(patient_lat, patient_lon, emergency_type, top_n=3, triage=None):
+def recommend(patient_lat, patient_lon, emergency_type, top_n=3, triage=None, hour=None):
     hospitals = load_hospitals()
     ambulances = load_ambulances()
 
     # Enrich each hospital with occupancy prediction
-    hospitals = [enrich_hospital_with_occupancy(h) for h in hospitals]
+    # (hour pins wait predictions to a fixed hour — used by the parity tests)
+    hospitals = [enrich_hospital_with_occupancy(h, hour) for h in hospitals]
 
     # Score and rank
     scored = [score_hospital(h, patient_lat, patient_lon, emergency_type, triage) for h in hospitals]

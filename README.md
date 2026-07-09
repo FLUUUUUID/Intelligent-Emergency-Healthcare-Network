@@ -6,7 +6,7 @@ An AI-powered emergency healthcare network that connects **patients, ambulances,
 
 Built on real hospital data from **Gwalior, Madhya Pradesh** (8 hospitals · 8 ambulances).
 
-![stack](https://img.shields.io/badge/React%2018-TypeScript-blue) ![backend](https://img.shields.io/badge/Flask-Python-green) ![maps](https://img.shields.io/badge/Leaflet-OSRM%20routing-brightgreen) [![deploy](https://img.shields.io/badge/Vercel-live-black?logo=vercel)](https://intelligent-emergency-healthcare-ne.vercel.app)
+[![CI](https://github.com/FLUUUUUID/Intelligent-Emergency-Healthcare-Network/actions/workflows/ci.yml/badge.svg)](https://github.com/FLUUUUUID/Intelligent-Emergency-Healthcare-Network/actions/workflows/ci.yml) ![stack](https://img.shields.io/badge/React%2018-TypeScript-blue) ![backend](https://img.shields.io/badge/Flask-Python-green) ![maps](https://img.shields.io/badge/Leaflet-OSRM%20routing-brightgreen) [![deploy](https://img.shields.io/badge/Vercel-live-black?logo=vercel)](https://intelligent-emergency-healthcare-ne.vercel.app)
 
 ![IEHN landing page](Docs/screenshots/landing-hero.png)
 
@@ -93,6 +93,17 @@ Identical implementations in Python ([Src/hospital_recommender.py](Src/hospital_
 Wait times are predicted by a **trained ridge-regression model** (R² ≈ 0.85 on held-out data, within a few percent of a 200-tree random-forest reference) using queueing-informed features: polynomial ICU-occupancy congestion, sine/cosine diurnal demand encoding, and facility type. The full methodology — synthetic data generation from documented assumptions, model comparison, selection under the dual-runtime portability constraint — lives in [Notebooks/wait_time_model.ipynb](Notebooks/wait_time_model.ipynb).
 
 The trained artifact exports to a ~1 KB JSON ([Data/wait_model.json](Data/wait_model.json)) evaluated **identically in both runtimes** (verified to 6 decimal places), with the Phase-1 heuristic retained as a fallback. Phase 2 retrains the same pipeline on live HMIS feeds.
+
+### Testing — enforced cross-runtime parity
+
+The "identical engines" claim is machine-enforced, not aspirational. **Golden fixtures** ([Tests/fixtures/parity_cases.json](Tests/fixtures/parity_cases.json)) are generated from the Python engine and asserted by *both* test suites at 9-decimal precision — 8 scenarios covering every emergency type, triage variants (pediatric nudge, mass casualty), and diurnal hours:
+
+```bash
+python -m pytest Tests/ -q        # 26 tests — Python engine + golden fixtures
+cd frontend && npm test           # 26 tests — TypeScript engine + the same goldens
+```
+
+Unit tests also cover haversine geometry, occupancy classification boundaries, ML-model properties (clip range, monotonicity, diurnal peak, government load factor, heuristic fallback), triage severity escalation, and dispatch rules (busy ambulances never assigned). Both suites + a production build run in [CI](.github/workflows/ci.yml) on every push. After an intentional scoring change, regenerate the goldens with `python Tests/generate_fixtures.py` and commit the diff.
 
 ## API
 

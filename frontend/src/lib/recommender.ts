@@ -124,19 +124,20 @@ function predictWaitTime(
   baseWait: number,
   rate: number,
   type: RawHospital['type'] = 'private',
-  hour: number = new Date().getHours(),
+  hour?: number,
 ): number {
-  const multiplier = modelMultiplier(rate, type === 'government', hour) ?? heuristicMultiplier(rate)
+  const h = hour ?? new Date().getHours()
+  const multiplier = modelMultiplier(rate, type === 'government', h) ?? heuristicMultiplier(rate)
   return round(baseWait * multiplier, 0)
 }
 
-function enrich(h: RawHospital): Hospital {
+function enrich(h: RawHospital, hour?: number): Hospital {
   const { status, rate } = getOccupancy(h.available_icu_beds, h.total_icu_beds)
   return {
     ...h,
     occupancy_status: status,
     occupancy_rate: round(rate, 2),
-    adjusted_wait_minutes: predictWaitTime(h.avg_wait_minutes, rate, h.type),
+    adjusted_wait_minutes: predictWaitTime(h.avg_wait_minutes, rate, h.type, hour),
   }
 }
 
@@ -238,8 +239,9 @@ export function computeRecommendation(
   emergencyType: string,
   topN = 3,
   triage?: Triage,
+  hour?: number, // pins wait predictions to a fixed hour — used by the parity tests
 ): ApiResult {
-  const enriched = HOSPITALS.map(enrich)
+  const enriched = HOSPITALS.map((h) => enrich(h, hour))
   const scored = enriched
     .map((h) => scoreHospital(h, patientLat, patientLon, emergencyType, triage))
     .sort((a, b) => b.score - a.score)

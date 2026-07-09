@@ -90,17 +90,19 @@ def predict_wait_time(base_wait_minutes, occupancy_rate, hospital_type="private"
     return round(base_wait_minutes * multiplier, 0)
 
 
-def enrich_hospital_with_occupancy(hospital):
+def enrich_hospital_with_occupancy(hospital, hour=None):
     """
     Takes a hospital dict and adds occupancy fields to it.
     Call this before scoring or displaying any hospital.
+    `hour` pins the wait prediction to a fixed hour (used by tests);
+    defaults to the current local hour.
     """
     status, rate = get_occupancy_status(
         hospital["available_icu_beds"],
         hospital["total_icu_beds"]
     )
     adjusted_wait = predict_wait_time(
-        hospital["avg_wait_minutes"], rate, hospital.get("type", "private")
+        hospital["avg_wait_minutes"], rate, hospital.get("type", "private"), hour
     )
 
     hospital["occupancy_status"] = status
