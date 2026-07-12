@@ -76,10 +76,10 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-white/8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-[12px] text-white/30">
-            © 2026 Intelligent Emergency Healthcare Network — Master's Research Project.
+            © 2026 Intelligent Emergency Healthcare Network. Research prototype.
           </p>
           <p className="text-[12px] text-white/30">
-            India · Germany · Open Research
+            Built in India · Open Research
           </p>
         </div>
       </div>

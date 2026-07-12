@@ -5,10 +5,10 @@ import { Award, BookOpen, Globe, Zap } from 'lucide-react'
 const cards = [
   {
     icon: Award,
-    title: "Master's Research",
-    institution: 'Germany — M.Sc. Program',
+    title: 'Applied Research',
+    institution: 'Independent Project',
     description:
-      "Developed as part of postgraduate research exploring AI-driven approaches to emergency healthcare optimization in developing economies, with a focus on India's unique infrastructure.",
+      "Explores AI-driven approaches to emergency healthcare optimization in developing economies, with a focus on India's unique infrastructure — built as a working system, not a paper concept.",
   },
   {
     icon: Zap,
@@ -29,7 +29,7 @@ const cards = [
     title: 'Global Impact Focus',
     institution: 'India First, Global Vision',
     description:
-      "Designed for India's unique healthcare topology — high-density cities, mixed infrastructure, resource constraints — with a long-term thesis for global scaling and adaptation.",
+      "Designed for India's unique healthcare topology — high-density cities, mixed infrastructure, resource constraints — with a long-term path to global scaling and adaptation.",
   },
 ]
 
